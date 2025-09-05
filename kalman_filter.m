@@ -91,19 +91,19 @@ function x_filtered = kalman_filter(y, x_true, enable_plotting)
         kalman_plot_realtime(x_hat, y, x_true, k_gain_x, k_step);
     end
 end
-
 function kalman_plot_realtime(x_estimated, y_measured, x_true, k_gain, k_step)
     % Real-time plotting function for Kalman Filter in Simulink
     % Inputs:
-    %   x_estimated - Current estimated state (6x1 or 2x1 for position only)
-    %   y_measured  - Current measurement (3x1 or 2x1 for position only)
-    %   x_true      - Current true state (6x1 or 2x1 for position only)
+    %   x_estimated - Current estimated state (6x1) (x,y,theta, xdot, ydot, thetadot)
+    %   y_measured  - Current measurement (3x1) (x,y,theta)
+    %   x_true      - Current true state (3x1) (x,y,theta)
     %   k_gain      - Current Kalman gain (first element for x-position)
     %   k_step      - Current time step
     
     % Persistent variables to store data history
     persistent xk_hat_history yk_history xk_history Kv_history time_history
     persistent fig_handle initialized max_points
+    persistent error_history error_fig_handle
     
     % Initialize on first call
     if isempty(initialized)
@@ -116,10 +116,15 @@ function kalman_plot_realtime(x_estimated, y_measured, x_true, k_gain, k_step)
         xk_history = zeros(2, max_points);
         Kv_history = zeros(1, max_points);
         time_history = zeros(1, max_points);
+
+        % Error history (x,y,theta)
+        error_history = zeros(3, max_points);
         
-        % Create figure
+        % Create figures
         fig_handle = figure('Name', 'Kalman Filter Real-time Results', ...
-                              'NumberTitle', 'off', 'Position', [100, 100, 1200, 800]);
+                            'NumberTitle', 'off', 'Position', [100, 100, 1200, 800]);
+        error_fig_handle = figure('Name', 'Kalman Filter Estimation Error', ...
+                                  'NumberTitle', 'off', 'Position', [1400, 100, 800, 600]);
         
         initialized = true;
     end
@@ -152,6 +157,13 @@ function kalman_plot_realtime(x_estimated, y_measured, x_true, k_gain, k_step)
     xk_history(:, current_idx) = x_true_pos;
     Kv_history(current_idx) = k_gain; % Store first element of Kalman gain
     time_history(current_idx) = k_step;
+
+    % Store error (x, y, theta if available)
+    if length(x_estimated) >= 3 && length(x_true) >= 3
+        error_history(:, current_idx) = x_estimated(1:3) - x_true(1:3);
+    else
+        error_history(1:2, current_idx) = x_est_pos - x_true_pos;
+    end
     
     % Determine range for plotting
     if k_step <= max_points
@@ -166,7 +178,7 @@ function kalman_plot_realtime(x_estimated, y_measured, x_true, k_gain, k_step)
     % Update plots every N steps (for performance)
     plot_update_interval = 10;
     if mod(k_step, plot_update_interval) == 0 || k_step <= 10
-        
+        %% Main figure (estimation, measurement, true, gain)
         figure(fig_handle);
         
         % X Position Plot
@@ -217,8 +229,39 @@ function kalman_plot_realtime(x_estimated, y_measured, x_true, k_gain, k_step)
         xlabel('Time Step (k)');
         title('Kalman Gain Evolution');
         grid on;
+
+        %% Error figure
+        figure(error_fig_handle);
         
+        % X error
+        subplot(3, 1, 1);
+        cla;
+        plot(plot_range, error_history(1, range), 'b-', 'LineWidth', 1.5);
+        ylabel('x error');
+        xlabel('Time Step (k)');
+        title('Estimation Error - X');
+        grid on;
+        
+        % Y error
+        subplot(3, 1, 2);
+        cla;
+        plot(plot_range, error_history(2, range), 'r-', 'LineWidth', 1.5);
+        ylabel('y error');
+        xlabel('Time Step (k)');
+        title('Estimation Error - Y');
+        grid on;
+        
+        % Theta error (only if available)
+        subplot(3, 1, 3);
+        cla;
+        plot(plot_range, error_history(3, range), 'g-', 'LineWidth', 1.5);
+        ylabel('\theta error');
+        xlabel('Time Step (k)');
+        title('Estimation Error - Theta');
+        grid on;
+
         % Force drawing update
         drawnow;
     end
 end
+

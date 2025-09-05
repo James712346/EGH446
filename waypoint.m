@@ -1,5 +1,4 @@
-start_pos = [0 0 pi];
-V = 10;
+start_pos = [0 0 pi/4];
 dt = 0.5;
 
 % Guidance
@@ -37,3 +36,5 @@ optimalroute = allroutes(best,:);
 
 % order waypoints based on travel order 
 orderedWaypoints = waypoint_locations(optimalroute,:);
+
+orderedWaypoints = [0 0; 4 4;];
