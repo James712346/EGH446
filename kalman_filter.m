@@ -33,12 +33,27 @@ function x_filtered = kalman_filter(y, x_true, enable_plotting)
              0, 0, 0, 0,  0,  1];
         
         % Process noise covariance Q
-        sigma = 1e-2;
-        sigmadot = 5e-2;
-        Q = diag([sigma, sigma, sigma, sigmadot, sigmadot, sigmadot]);
+        sigma_xy = 0.01;
+        sigma_theta = deg2rad(4);
+        sigma_xyDot = sigma_xy;
+        sigma_thetaDot = sigma_theta;
+        Q = diag([sigma_xy, sigma_xy, sigma_theta, sigma_xyDot, sigma_xyDot, sigma_thetaDot ]);
         % Measurement noise covariance R
-        Const_R = 0.5;
-        R = Const_R * eye(3);
+
+        % show two figure beside each other
+        % 150 % stationary
+        % 15 - Factor 10
+        % 25 - Tune of Low Values
+        R_factor = 30;
+        % 1 - init
+        % 100 - Tune Stationary
+        % 200 - HighTheta
+        % 50 - LowTheta
+        % 60 - LowThetaHighXY
+        % 6 - Factor 10
+        % 6 - Tune of Low Values
+        R_thetaFactor = 5;
+        R = diag([sigma_xy * R_factor, sigma_xy * R_factor, sigma_theta * R_thetaFactor]);
         
         % Measurement matrix H
         H = [1, 0, 0, 0, 0, 0;
@@ -49,8 +64,10 @@ function x_filtered = kalman_filter(y, x_true, enable_plotting)
         x_hat = [0; 0; 0; 0; 0; 0];
         
         % Initial error covariance matrix
-        P = eye(6) * 1000;  % Large initial uncertainty
-        
+        % 1000 - init
+        % 100 - To Point Tune
+        P = eye(6) * 100;  % Large initial uncertainty
+
         initialized = true;
     end
     

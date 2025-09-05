@@ -37,4 +37,4 @@ optimalroute = allroutes(best,:);
 % order waypoints based on travel order 
 orderedWaypoints = waypoint_locations(optimalroute,:);
 
-orderedWaypoints = [0 0; 4 4;];
+staticWaypoints = [0 0; 4 4;];
